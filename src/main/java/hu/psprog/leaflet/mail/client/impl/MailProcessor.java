@@ -9,6 +9,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.util.List;
@@ -25,6 +26,7 @@ class MailProcessor {
     private static final String NO_MAIL_RENDERER_PROVIDED = "No mail renderer provided.";
     private static final String SELECTED_MAIL_RENDERER_NOT_AVAILABLE = "Selected mail renderer [%s] not available.";
 
+    private List<MailRenderer> availableMailRendererList;
     private MailRenderer mailRenderer;
     private MailProcessorConfigurationProperties mailProcessorConfigurationProperties;
     private JavaMailSender javaMailSender;
@@ -33,7 +35,12 @@ class MailProcessor {
     public MailProcessor(List<MailRenderer> mailRendererList, MailProcessorConfigurationProperties mailProcessorConfigurationProperties, JavaMailSender javaMailSender) {
         this.mailProcessorConfigurationProperties = mailProcessorConfigurationProperties;
         this.javaMailSender = javaMailSender;
-        selectMailRenderer(mailRendererList);
+        this.availableMailRendererList = mailRendererList;
+    }
+
+    @PostConstruct
+    public void initialize() {
+        selectMailRenderer(availableMailRendererList);
     }
 
     /**

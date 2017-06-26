@@ -5,7 +5,7 @@ import hu.psprog.leaflet.mail.domain.Mail;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.ITemplateEngine;
 import org.thymeleaf.context.Context;
 
 /**
@@ -16,10 +16,10 @@ import org.thymeleaf.context.Context;
 @Component
 public class ThymeleafMailRenderer implements MailRenderer {
 
-    private TemplateEngine templateEngine;
+    private ITemplateEngine templateEngine;
 
     @Autowired
-    public ThymeleafMailRenderer(@Qualifier("emailTemplateEngine") TemplateEngine templateEngine) {
+    public ThymeleafMailRenderer(@Qualifier("emailTemplateEngine") ITemplateEngine templateEngine) {
         this.templateEngine = templateEngine;
     }
 
