@@ -12,6 +12,7 @@ import org.springframework.util.Assert;
 import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
@@ -60,7 +61,7 @@ class MailProcessor {
     }
 
     private void prepareMessage(Mail mail, MimeMessage message) throws MessagingException {
-        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message);
+        MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
         mimeMessageHelper.setTo(getRecipient(mail));
         mimeMessageHelper.setSubject(mail.getSubject());
         mimeMessageHelper.setText(mailRenderer.renderMail(mail), true);
