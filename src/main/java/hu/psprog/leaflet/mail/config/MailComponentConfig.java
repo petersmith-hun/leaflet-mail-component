@@ -42,6 +42,7 @@ public class MailComponentConfig {
         javaMailSender.setPort(smtpConfigurationProperties.getSmtpPort());
         javaMailSender.setUsername(smtpConfigurationProperties.getSmtpUsername());
         javaMailSender.setPassword(smtpConfigurationProperties.getSmtpPassword());
+        javaMailSender.setDefaultEncoding(CHARACTER_ENCODING);
 
         return javaMailSender;
     }
