@@ -13,7 +13,8 @@ import java.util.Objects;
  * Mail processor configuration properties.
  * Required properties:
  *  - mail.notification: system notification address
- *  - mail.sender: sender (typically a no-reply) address
+ *  - mail.sender.address: sender (typically a no-reply) address
+ *  - mail.sender.name: sender name
  *  - mail.renderer: template renderer engine, defaults to {@link ThymeleafMailRenderer}
  *
  * @author Peter Smith
@@ -23,13 +24,16 @@ public class MailProcessorConfigurationProperties {
 
     private final String adminNotificationAddress;
     private final String senderAddress;
+    private final String senderName;
     private final Class<? extends MailRenderer> renderer;
 
     public MailProcessorConfigurationProperties(@NotEmpty @Value("${mail.notification}") String adminNotificationAddress,
-                                                @NotEmpty @Value("${mail.sender}") String senderAddress,
+                                                @NotEmpty @Value("${mail.sender.address}") String senderAddress,
+                                                @NotEmpty @Value("${mail.sender.name}") String senderName,
                                                 @Value("${mail.renderer}") Class<? extends MailRenderer> renderer) {
         this.adminNotificationAddress = adminNotificationAddress;
         this.senderAddress = senderAddress;
+        this.senderName = senderName;
         if (Objects.nonNull(renderer)) {
             this.renderer = renderer;
         } else {
@@ -39,6 +43,10 @@ public class MailProcessorConfigurationProperties {
 
     public String getSenderAddress() {
         return senderAddress;
+    }
+
+    public String getSenderName() {
+        return senderName;
     }
 
     public String getAdminNotificationAddress() {
@@ -54,6 +62,7 @@ public class MailProcessorConfigurationProperties {
         return new ToStringBuilder(this)
                 .append("adminNotificationAddress", adminNotificationAddress)
                 .append("senderAddress", senderAddress)
+                .append("senderName", senderName)
                 .append("renderer", renderer)
                 .toString();
     }

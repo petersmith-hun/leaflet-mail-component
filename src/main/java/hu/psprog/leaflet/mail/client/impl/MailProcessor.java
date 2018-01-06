@@ -3,6 +3,8 @@ package hu.psprog.leaflet.mail.client.impl;
 import hu.psprog.leaflet.mail.client.renderer.MailRenderer;
 import hu.psprog.leaflet.mail.config.MailProcessorConfigurationProperties;
 import hu.psprog.leaflet.mail.domain.Mail;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -10,8 +12,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import javax.annotation.PostConstruct;
+import javax.mail.Address;
 import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +28,8 @@ import java.util.Optional;
 @Component
 class MailProcessor {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(MailProcessor.class);
+
     private static final String NO_MAIL_RENDERER_PROVIDED = "No mail renderer provided.";
     private static final String SELECTED_MAIL_RENDERER_NOT_AVAILABLE = "Selected mail renderer [%s] not available.";
 
@@ -30,6 +37,7 @@ class MailProcessor {
     private MailRenderer mailRenderer;
     private MailProcessorConfigurationProperties mailProcessorConfigurationProperties;
     private JavaMailSender javaMailSender;
+    private Address sender;
 
     @Autowired
     public MailProcessor(List<MailRenderer> mailRendererList, MailProcessorConfigurationProperties mailProcessorConfigurationProperties, JavaMailSender javaMailSender) {
@@ -41,6 +49,7 @@ class MailProcessor {
     @PostConstruct
     public void initialize() {
         selectMailRenderer(availableMailRendererList);
+        prepareSender();
     }
 
     /**
@@ -53,10 +62,19 @@ class MailProcessor {
     public void process(Mail mail) throws MessagingException {
 
         MimeMessage message = javaMailSender.createMimeMessage();
-        message.setFrom(mailProcessorConfigurationProperties.getSenderAddress());
+        message.setFrom(sender);
         prepareMessage(mail, message);
 
         javaMailSender.send(message);
+    }
+
+    private void prepareSender() {
+        try {
+            sender = new InternetAddress(mailProcessorConfigurationProperties.getSenderAddress(), mailProcessorConfigurationProperties.getSenderName());
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.error("Could not prepare sender with mail configuration {}.", mailProcessorConfigurationProperties, e);
+            throw new IllegalArgumentException("Could not prepare sender - invalid mail configuration provided.");
+        }
     }
 
     private void prepareMessage(Mail mail, MimeMessage message) throws MessagingException {
