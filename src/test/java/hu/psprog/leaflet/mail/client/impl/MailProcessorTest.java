@@ -19,9 +19,11 @@ import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.util.Collections;
 
+import static junit.framework.TestCase.fail;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -40,6 +42,11 @@ public class MailProcessorTest {
     private static final String DEFAULT_RECIPIENT = "default@dev.lflt";
     private static final String EXACT_RECIPIENT = "test@dev.lflt";
     private static final String RENDERED_MAIL_CONTENT = "Rendered mail";
+    private static final String SENDER_ADDRESS = "sender-address@local.dev";
+    private static final String SENDER_NAME = "Test Sender";
+    private static final String FIELD_MAIL_RENDERER = "mailRenderer";
+    private static final String FIELD_SENDER = "sender";
+    private static final InternetAddress FROM_ADDRESS = prepareSender();
 
     @Mock
     private MailRenderer mailRenderer;
@@ -60,16 +67,18 @@ public class MailProcessorTest {
     private ThymeleafMailRenderer thymeleafMailRenderer;
 
     @Before
-    public void setup() throws MessagingException {
+    public void setup() {
         mailRenderer = mock(MailRenderer.class);
         thymeleafMailRenderer = new ThymeleafMailRenderer(null);
     }
 
     @Test
-    public void shouldSelectMailRenderer() throws MessagingException, NoSuchFieldException {
+    public void shouldSelectMailRendererAndPrepareSender() throws NoSuchFieldException {
 
         // given
         doReturn(ThymeleafMailRenderer.class).when(mailProcessorConfigurationProperties).getRenderer();
+        given(mailProcessorConfigurationProperties.getSenderAddress()).willReturn(SENDER_ADDRESS);
+        given(mailProcessorConfigurationProperties.getSenderName()).willReturn(SENDER_NAME);
         MailProcessor mailProcessorToInit = new MailProcessor(Collections.singletonList(thymeleafMailRenderer), mailProcessorConfigurationProperties, javaMailSender);
 
         // when
@@ -77,10 +86,11 @@ public class MailProcessorTest {
 
         // then
         assertThat(getMailRendererField(mailProcessorToInit), equalTo(thymeleafMailRenderer));
+        assertThat(getSenderField(mailProcessorToInit), equalTo(FROM_ADDRESS));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowIllegalArgumentExceptionIfSpecifiedMailRendererIsNotAvailable() throws MessagingException, NoSuchFieldException {
+    public void shouldThrowIllegalArgumentExceptionIfSpecifiedMailRendererIsNotAvailable() {
 
         // given
         doReturn(MailRenderer.class).when(mailProcessorConfigurationProperties).getRenderer();
@@ -100,16 +110,17 @@ public class MailProcessorTest {
         prepareMail(true);
         given(javaMailSender.createMimeMessage()).willReturn(mimeMessage);
         given(mailRenderer.renderMail(mail)).willReturn(RENDERED_MAIL_CONTENT);
-        setMailRendererField(mailProcessor, mailRenderer);
+        prepareMailRendererField();
+        prepareSenderField();
 
         // when
         mailProcessor.process(mail);
 
         // then
-        verify(mailProcessorConfigurationProperties).getSenderAddress();
         verify(mailRenderer).renderMail(mail);
         verify(mailProcessorConfigurationProperties).getAdminNotificationAddress();
         verify(mimeMessage).setRecipient(Message.RecipientType.TO, getAddressToCheck(EXACT_RECIPIENT));
+        verify(mimeMessage).setFrom(FROM_ADDRESS);
         verify(javaMailSender).send(mimeMessage);
     }
 
@@ -121,17 +132,30 @@ public class MailProcessorTest {
         given(javaMailSender.createMimeMessage()).willReturn(mimeMessage);
         given(mailRenderer.renderMail(mail)).willReturn(RENDERED_MAIL_CONTENT);
         given(mailProcessorConfigurationProperties.getAdminNotificationAddress()).willReturn(DEFAULT_RECIPIENT);
-        setMailRendererField(mailProcessor, mailRenderer);
+        prepareMailRendererField();
+        prepareSenderField();
 
         // when
         mailProcessor.process(mail);
 
         // then
-        verify(mailProcessorConfigurationProperties).getSenderAddress();
         verify(mailRenderer).renderMail(mail);
         verify(mailProcessorConfigurationProperties).getAdminNotificationAddress();
         verify(mimeMessage).setRecipient(Message.RecipientType.TO, getAddressToCheck(DEFAULT_RECIPIENT));
+        verify(mimeMessage).setFrom(FROM_ADDRESS);
         verify(javaMailSender).send(mimeMessage);
+    }
+
+    private static InternetAddress prepareSender() {
+
+        InternetAddress address = null;
+        try {
+            address = new InternetAddress(SENDER_ADDRESS, SENDER_NAME);
+        } catch (UnsupportedEncodingException e) {
+            fail("Failed to prepare sender address.");
+        }
+
+        return address;
     }
 
     private void prepareMail(boolean exactRecipient) {
@@ -148,16 +172,24 @@ public class MailProcessorTest {
     }
 
     private MailRenderer getMailRendererField(MailProcessor mailProcessor) throws NoSuchFieldException {
-        return (MailRenderer) ReflectionUtils.getField(accessMailRendererField(), mailProcessor);
+        return (MailRenderer) ReflectionUtils.getField(accessField(FIELD_MAIL_RENDERER), mailProcessor);
     }
 
-    private void setMailRendererField(MailProcessor mailProcessor, MailRenderer mailRenderer) throws NoSuchFieldException {
-        ReflectionUtils.setField(accessMailRendererField(), mailProcessor, mailRenderer);
+    private InternetAddress getSenderField(MailProcessor mailProcessor) throws NoSuchFieldException {
+        return (InternetAddress) ReflectionUtils.getField(accessField(FIELD_SENDER), mailProcessor);
     }
 
-    private Field accessMailRendererField() throws NoSuchFieldException {
+    private void prepareMailRendererField() throws NoSuchFieldException {
+        ReflectionUtils.setField(accessField(FIELD_MAIL_RENDERER), mailProcessor, mailRenderer);
+    }
 
-        Field field = MailProcessor.class.getDeclaredField("mailRenderer");
+    private void prepareSenderField() throws NoSuchFieldException {
+        ReflectionUtils.setField(accessField(FIELD_SENDER), mailProcessor, FROM_ADDRESS);
+    }
+
+    private Field accessField(String fieldName) throws NoSuchFieldException {
+
+        Field field = MailProcessor.class.getDeclaredField(fieldName);
         field.setAccessible(true);
 
         return field;
