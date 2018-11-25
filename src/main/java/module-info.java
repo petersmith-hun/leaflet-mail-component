@@ -1,4 +1,4 @@
-module leaflet.mailer.component {
+module leaflet.component.mail {
     requires java.annotation;
     requires java.compiler;
     requires java.mail;
