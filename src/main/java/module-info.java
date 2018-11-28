@@ -11,5 +11,9 @@ module leaflet.component.mail {
     requires spring.context.support;
     requires spring.core;
     requires thymeleaf;
-    requires thymeleaf.spring4;
+    requires thymeleaf.spring5;
+
+    exports hu.psprog.leaflet.mail.client;
+    exports hu.psprog.leaflet.mail.config;
+    exports hu.psprog.leaflet.mail.domain;
 }
