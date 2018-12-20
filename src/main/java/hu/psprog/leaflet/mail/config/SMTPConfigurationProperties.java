@@ -1,9 +1,10 @@
 package hu.psprog.leaflet.mail.config;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import javax.validation.constraints.NotEmpty;
 
 /**
  * SMTP server configuration properties for mail component.

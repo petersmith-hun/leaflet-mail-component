@@ -3,10 +3,10 @@ package hu.psprog.leaflet.mail.config;
 import hu.psprog.leaflet.mail.client.renderer.MailRenderer;
 import hu.psprog.leaflet.mail.client.renderer.impl.ThymeleafMailRenderer;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.validation.constraints.NotEmpty;
 import java.util.Objects;
 
 /**

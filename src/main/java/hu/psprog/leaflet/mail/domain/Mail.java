@@ -1,8 +1,8 @@
 package hu.psprog.leaflet.mail.domain;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.hibernate.validator.constraints.NotEmpty;
 
+import javax.validation.constraints.NotEmpty;
 import java.util.Map;
 
 /**
