@@ -13,6 +13,7 @@ import java.util.Map;
 public class Mail {
 
     private String recipient;
+    private String replyTo;
     private Map<String, Object> contentMap;
 
     @NotEmpty
@@ -23,6 +24,10 @@ public class Mail {
 
     public String getRecipient() {
         return recipient;
+    }
+
+    public String getReplyTo() {
+        return replyTo;
     }
 
     public String getSubject() {
@@ -41,6 +46,7 @@ public class Mail {
     public String toString() {
         return new ToStringBuilder(this)
                 .append("recipient", recipient)
+                .append("replyTo", replyTo)
                 .append("subject", subject)
                 .append("template", template)
                 .append("contentMap", contentMap)
@@ -56,6 +62,7 @@ public class Mail {
      */
     public static final class MailBuilder {
         private String recipient;
+        private String replyTo;
         private String subject;
         private String template;
         private Map<String, Object> contentMap;
@@ -72,6 +79,18 @@ public class Mail {
          */
         public MailBuilder withRecipient(String recipient) {
             this.recipient = recipient;
+            return this;
+        }
+
+        /**
+         * Adds optional reply-to address to the email.
+         * Providing this parameter forces the processor to set the specified address as reply-to address.
+         *
+         * @param replyTo reply-to email address
+         * @return builder
+         */
+        public MailBuilder withReplyTo(String replyTo) {
+            this.replyTo = replyTo;
             return this;
         }
 
@@ -114,6 +133,7 @@ public class Mail {
             mail.template = this.template;
             mail.subject = this.subject;
             mail.recipient = this.recipient;
+            mail.replyTo = this.replyTo;
             mail.contentMap = this.contentMap;
             return mail;
         }
