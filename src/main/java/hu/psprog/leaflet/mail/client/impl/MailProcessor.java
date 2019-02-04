@@ -18,6 +18,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -82,6 +83,10 @@ class MailProcessor {
         mimeMessageHelper.setTo(getRecipient(mail));
         mimeMessageHelper.setSubject(mail.getSubject());
         mimeMessageHelper.setText(mailRenderer.renderMail(mail), true);
+
+        if (Objects.nonNull(mail.getReplyTo())) {
+            mimeMessageHelper.setReplyTo(mail.getReplyTo());
+        }
     }
 
     private String getRecipient(Mail mail) {

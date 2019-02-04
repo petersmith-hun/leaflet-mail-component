@@ -30,6 +30,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 /**
  * Unit tests for {@link MailProcessor}.
@@ -47,6 +48,9 @@ public class MailProcessorTest {
     private static final String FIELD_MAIL_RENDERER = "mailRenderer";
     private static final String FIELD_SENDER = "sender";
     private static final InternetAddress FROM_ADDRESS = prepareSender();
+    private static final String REPLY_TO_ADDRESS = "test@dev.local";
+    private static final String SUBJECT = "Test";
+    private static final String CONTENT_TYPE_HTML = "text/html";
 
     @Mock
     private MailRenderer mailRenderer;
@@ -122,6 +126,9 @@ public class MailProcessorTest {
         verify(mimeMessage).setRecipient(Message.RecipientType.TO, getAddressToCheck(EXACT_RECIPIENT));
         verify(mimeMessage).setFrom(FROM_ADDRESS);
         verify(javaMailSender).send(mimeMessage);
+        verify(mimeMessage).setSubject(SUBJECT);
+        verify(mimeMessage).setContent(RENDERED_MAIL_CONTENT, CONTENT_TYPE_HTML);
+        verifyNoMoreInteractions(mimeMessage);
     }
 
     @Test
@@ -144,6 +151,34 @@ public class MailProcessorTest {
         verify(mimeMessage).setRecipient(Message.RecipientType.TO, getAddressToCheck(DEFAULT_RECIPIENT));
         verify(mimeMessage).setFrom(FROM_ADDRESS);
         verify(javaMailSender).send(mimeMessage);
+        verify(mimeMessage).setSubject(SUBJECT);
+        verify(mimeMessage).setContent(RENDERED_MAIL_CONTENT, CONTENT_TYPE_HTML);
+        verifyNoMoreInteractions(mimeMessage);
+    }
+
+    @Test
+    public void shouldProcessMailWithReplyToAddress() throws NoSuchFieldException, MessagingException {
+
+        // given
+        prepareMail(true, true);
+        given(javaMailSender.createMimeMessage()).willReturn(mimeMessage);
+        given(mailRenderer.renderMail(mail)).willReturn(RENDERED_MAIL_CONTENT);
+        prepareMailRendererField();
+        prepareSenderField();
+
+        // when
+        mailProcessor.process(mail);
+
+        // then
+        verify(mailRenderer).renderMail(mail);
+        verify(mailProcessorConfigurationProperties).getAdminNotificationAddress();
+        verify(mimeMessage).setRecipient(Message.RecipientType.TO, getAddressToCheck(EXACT_RECIPIENT));
+        verify(mimeMessage).setFrom(FROM_ADDRESS);
+        verify(javaMailSender).send(mimeMessage);
+        verify(mimeMessage).setReplyTo(new Address[] {getAddressToCheck(REPLY_TO_ADDRESS)});
+        verify(mimeMessage).setSubject(SUBJECT);
+        verify(mimeMessage).setContent(RENDERED_MAIL_CONTENT, CONTENT_TYPE_HTML);
+        verifyNoMoreInteractions(mimeMessage);
     }
 
     private static InternetAddress prepareSender() {
@@ -159,11 +194,18 @@ public class MailProcessorTest {
     }
 
     private void prepareMail(boolean exactRecipient) {
+        prepareMail(exactRecipient, false);
+    }
+
+    private void prepareMail(boolean exactRecipient, boolean withReplyTo) {
         mail = Mail.getBuilder()
                 .withRecipient(exactRecipient
                         ? EXACT_RECIPIENT
                         : null)
-                .withSubject("Test")
+                .withSubject(SUBJECT)
+                .withReplyTo(withReplyTo
+                        ? REPLY_TO_ADDRESS
+                        : null)
                 .build();
     }
 
