@@ -1,11 +1,10 @@
 package hu.psprog.leaflet.mail.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
@@ -31,7 +30,6 @@ public class MailComponentConfig {
     private static final String TEMPLATE_RESOLVER_PREFIX = "/mail/";
     private static final String TEMPLATE_RESOLVER_SUFFIX = ".html";
     private static final String CHARACTER_ENCODING = "UTF-8";
-    private static final String MESSAGE_SOURCE_BASE_NAME = "mail";
 
     @Bean
     @Autowired
@@ -53,21 +51,12 @@ public class MailComponentConfig {
     }
 
     @Bean
-    public ResourceBundleMessageSource emailMessageSource() {
-
-        ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
-        messageSource.setBasename(MESSAGE_SOURCE_BASE_NAME);
-
-        return messageSource;
-    }
-
-    @Bean
     @Autowired
-    public TemplateEngine emailTemplateEngine(@Qualifier("emailMessageSource") ResourceBundleMessageSource emailMessageSource) {
+    public TemplateEngine emailTemplateEngine(MessageSource messageSource) {
 
         SpringTemplateEngine templateEngine = new SpringTemplateEngine();
         templateEngine.addTemplateResolver(htmlEmailTemplateResolver());
-        templateEngine.setTemplateEngineMessageSource(emailMessageSource);
+        templateEngine.setTemplateEngineMessageSource(messageSource);
 
         return templateEngine;
     }
