@@ -2,7 +2,7 @@ version: 2.1
 orbs:
   jira: circleci/jira@1.1.2
 jobs:
-  build_leaflet-bridge:
+  build_leaflet-mailer-component:
     docker:
       - image: cimg/openjdk:11.0.6
     steps:
@@ -15,7 +15,7 @@ jobs:
 workflows:
   build:
     jobs:
-      - build_leaflet-bridge:
+      - build_leaflet-mailer-component:
          context: leaflet_ci
          filters:
            branches:
