@@ -3,14 +3,15 @@ package hu.psprog.leaflet.mail.client.impl;
 import hu.psprog.leaflet.mail.domain.Mail;
 import hu.psprog.leaflet.mail.domain.MailDeliveryInfo;
 import hu.psprog.leaflet.mail.domain.MailDeliveryStatus;
-import junitparams.JUnitParamsRunner;
-import junitparams.Parameters;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.mail.MessagingException;
 import javax.mail.SendFailedException;
@@ -20,6 +21,7 @@ import javax.validation.Validator;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -28,20 +30,20 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 /**
  * Unit tests for {@link MailClientImpl}.
  *
  * @author Peter Smith
  */
-@RunWith(JUnitParamsRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class MailClientImplTest {
 
     private static final String MOCKED_VIOLATION = "Mocked Violation";
     private static final String VIOLATING_FIELD = "violatingField";
 
-    @Mock
+    @Mock(lenient = true)
     private MailProcessor mailProcessor;
 
     @Mock
@@ -58,9 +60,8 @@ public class MailClientImplTest {
 
     private Mail mail;
 
-    @Before
+    @BeforeEach
     public void setup() throws MessagingException {
-        MockitoAnnotations.initMocks(this);
         mail = Mail.getBuilder().build();
         doNothing().when(mailProcessor).process(mail);
     }
@@ -101,11 +102,11 @@ public class MailClientImplTest {
         assertThat(result.getConstraintViolations().size(), equalTo(1));
         assertThat(result.getConstraintViolations().get(VIOLATING_FIELD), equalTo(MOCKED_VIOLATION));
         verify(validator).validate(mail);
-        verifyZeroInteractions(mailProcessor);
+        verifyNoInteractions(mailProcessor);
     }
 
-    @Test
-    @Parameters(source = MailStatusProvider.class)
+    @ParameterizedTest
+    @MethodSource("mailStatusDataProvider")
     public void shouldHandleSpecificExceptions(Class<Exception> exception, MailDeliveryStatus expectedStatus) throws MessagingException {
 
         // given
@@ -130,14 +131,11 @@ public class MailClientImplTest {
         return  constraintViolations;
     }
 
-    public static class MailStatusProvider {
-
-        public static Object[] provideParameters() {
-            return new Object[] {
-                    new Object[] {SendFailedException.class, MailDeliveryStatus.INVALID_RECIPIENT},
-                    new Object[] {MessagingException.class, MailDeliveryStatus.COMMUNICATION_ERROR},
-                    new Object[] {RuntimeException.class, MailDeliveryStatus.UNKNOWN_ERROR}
-            };
-        }
+    private static Stream<Arguments> mailStatusDataProvider() {
+        return Stream.of(
+                Arguments.of(SendFailedException.class, MailDeliveryStatus.INVALID_RECIPIENT),
+                Arguments.of(MessagingException.class, MailDeliveryStatus.COMMUNICATION_ERROR),
+                Arguments.of(RuntimeException.class, MailDeliveryStatus.UNKNOWN_ERROR)
+        );
     }
 }
